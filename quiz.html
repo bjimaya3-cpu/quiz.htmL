@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="te">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz Game</title>
+<style>
+body{font-family:sans-serif;margin:0;background:#f0f4ff;text-align:center;padding:20px}
+button{display:block;width:90%;max-width:400px;margin:10px auto;padding:14px;font-size:18px;border:none;border-radius:10px;background:#007bff;color:#fff}
+.opt{background:#fff;color:#333;border:2px solid #007bff}
+.right{background:#28a745!important;color:#fff!important}
+.wrong{background:#dc3545!important;color:#fff!important}
+.clue{background:#ffc107;color:#333}
+#clueText{font-size:16px;color:#555;margin:10px}
+#feedback{font-size:18px;font-weight:bold;margin:10px;min-height:24px}
+#score{font-size:20px;margin:15px}
+</style>
+</head>
+<body>
+<div id="menu">
+<h2>Quiz Game</h2>
+<button onclick="start('gk')">General Knowledge</button>
+<button onclick="start('tm')">Telugu Movies</button>
+<button onclick="start('math')">Maths</button>
+</div>
+<div id="game" style="display:none">
+<h3 id="q"></h3>
+<button class="clue" onclick="showClue()">క్లూ చూపించు</button>
+<div id="clueText"></div>
+<div id="opts"></div>
+<div id="feedback"></div>
+<div id="score"></div>
+</div>
+<script>
+const data={
+gk:[
+{q:"భారతదేశ రాజధాని ఏది?",a:["ముంబై","ఢిల్లీ","చెన్నై","కోల్‌కతా"],c:1,clue:"ఇది మొఘల్ కాలం నాటి ఎర్రకోట ఉన్న నగరం"},
+{q:"సూర్యుడు ఏ రకమైన నక్షత్రం?",a:["చంద్రుడు","గ్రహం","నక్షత్రం","ఉపగ్రహం"],c:2,clue:"ఇది మన సౌర కుటుంబం మధ్యలో ఉంటుంది"},
+{q:"నీటి రసాయన సూత్రం ఏమిటి?",a:["CO2","H2O","O2","NaCl"],c:1,clue:"హైడ్రోజన్ రెండు, ఆక్సిజన్ ఒకటి"},
+{q:"ప్రపంచంలో అతిపెద్ద ఖండం ఏది?",a:["ఆఫ్రికా","యూరప్","ఆసియా","అమెరికా"],c:2,clue:"భారతదేశం ఈ ఖండంలోనే ఉంది"},
+{q:"భారత స్వాతంత్ర్య దినోత్సవం ఏ తేదీ?",a:["జనవరి 26","ఆగస్టు 15","అక్టోబర్ 2","మార్చి 8"],c:1,clue:"ఇది జెండా ఎగురవేసే రోజు, ఆగస్టు నెలలో"}
+],
+tm:[
+{q:"'బాహుబలి' సినిమాకు దర్శకుడు ఎవరు?",a:["రాజమౌళి","త్రివిక్రమ్","సుకుమార్","కొరటాల"],c:0,clue:"ఇతను 'ఈగ' సినిమా కూడా తీశారు"},
+{q:"'అల వైకుంఠపురములో' హీరో ఎవరు?",a:["మహేష్ బాబు","అల్లు అర్జున్","ప్రభాస్","రామ్ చరణ్"],c:1,clue:"ఇతను 'పుష్ప' సినిమా హీరో కూడా"},
+{q:"'మగధీర' సినిమా హీరో ఎవరు?",a:["ఎన్టీఆర్","రామ్ చరణ్","నాగార్జున","వెంకటేష్"],c:1,clue:"ఇతను చిరంజీవి కుమారుడు"},
+{q:"'అర్జున్ రెడ్డి' సినిమా దర్శకుడు ఎవరు?",a:["సందీప్ రెడ్డి వంగా","పూరి జగన్నాథ్","శేఖర్ కమ్ముల","తేజ"],c:0,clue:"ఇతని పేరులో 'వంగా' ఉంటుంది"},
+{q:"'పుష్ప' సినిమా హీరో ఎవరు?",a:["అల్లు అర్జున్","మహేష్ బాబు","ఎన్టీఆర్","విజయ్"],c:0,clue:"ఇతను స్టైలిష్ స్టార్ అని పిలవబడతాడు"}
+],
+math:[
+{q:"5 + 7 = ?",a:["10","11","12","13"],c:2,clue:"ఐదు, ఏడు కలిపితే ఎంత?"},
+{q:"9 x 6 = ?",a:["54","45","56","64"],c:0,clue:"తొమ్మిది ఆరు సార్లు"},
+{q:"100 - 37 = ?",a:["63","73","67","57"],c:0,clue:"వంద నుండి ముప్పై ఏడు తీసేయండి"},
+{q:"144 ÷ 12 = ?",a:["11","12","13","10"],c:1,clue:"పన్నెండు సార్లు ఎంత పన్నెండు అవుతుంది?"},
+{q:"15 x 4 = ?",a:["45","60","50","55"],c:1,clue:"పదిహేను నాలుగు సార్లు"}
+]
+};
+let qs=[],i=0,score=0,answered=false;
+function start(k){
+qs=data[k];i=0;score=0;
+document.getElementById("menu").style.display="none";
+document.getElementById("game").style.display="block";
+show();
+}
+function show(){
+answered=false;
+const q=qs[i];
+document.getElementById("q").textContent=(i+1)+". "+q.q;
+document.getElementById("clueText").textContent="";
+document.getElementById("feedback").textContent="";
+document.getElementById("score").textContent="స్కోర్: "+score+" / "+qs.length;
+const box=document.getElementById("opts");
+box.innerHTML="";
+q.a.forEach((t,idx)=>{
+const b=document.createElement("button");
+b.className="opt";
+b.textContent=t;
+b.onclick=()=>answer(idx,b);
+box.appendChild(b);
+});
+}
+function showClue(){
+document.getElementById("clueText").textContent="క్లూ: "+qs[i].clue;
+}
+function answer(idx,btn){
+if(answered)return;
+answered=true;
+const fb=document.getElementById("feedback");
+const buttons=document.querySelectorAll("#opts button");
+buttons[qs[i].c].classList.add("right");
+if(idx===qs[i].c){
+score++;
+fb.textContent="సరైనది!";
+}else{
+btn.classList.add("wrong");
+fb.textContent="తప్పు. సరైన సమాధానం: "+qs[i].a[qs[i].c];
+}
+setTimeout(()=>{
+i++;
+if(i<qs.length)show();
+else{
+document.getElementById("q").textContent="ఆట ముగిసింది!";
+document.getElementById("clueText").textContent="";
+document.getElementById("opts").innerHTML='<button onclick="location.reload()">మళ్ళీ ఆడు</button>';
+fb.textContent="";
+document.getElementById("score").textContent="మీ స్కోర్: "+score+" / "+qs.length;
+}
+},1500);
+}
+</script>
+</body>
+</html>
